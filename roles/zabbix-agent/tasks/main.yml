@@ -1,0 +1,31 @@
+---
+# 这个roles会在服务器上安装zabbix agent(版本3.0.15)
+- name: create user zabbix
+  user: name=zabbix state=present
+  
+- name: install gcc compiler
+  yum: name=gcc state=present
+  
+- name: copy zabbix-3.0.15.tar.gz to server
+  copy: src=zabbix-3.0.15.tar.gz dest=/tmp/
+  
+- name: decompression zabbix-3.0.15.tar.gz
+  shell: tar -xvf /tmp/zabbix-3.0.15.tar.gz -C /tmp/
+  
+- name: compile zabbix files
+  shell: cd /tmp/zabbix-3.0.15 && ./configure --prefix=/usr/local/zabbix --enable-agent
+  
+- name: make && make install
+  shell: cd /tmp/zabbix-3.0.15 && make && make install
+  
+- name: copy zabbix_agentd script and change privilege
+  copy: src=zabbix_agentd dest=/etc/init.d/ mode=0755
+  
+- name: create zabbix_agent configuration file
+  template: src=zabbix_agentd.conf.j2 dest=/usr/local/zabbix/etc/zabbix_agentd.conf backup=yes
+  
+- name: clear temp files
+  shell: rm -rf /tmp/zabbix-3.0.15 /tmp/zabbix-3.0.15.tar.gz
+ 
+- name: start zabbix agent service
+  service: name=zabbix_agentd state=started
